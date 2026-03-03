@@ -5,7 +5,7 @@
 [![GitHub top language](https://img.shields.io/github/languages/top/DavitTec/davit-logger-pro?style=for-the-badge)](https://github.com/DavitTec/davit-logger-pro)
 [![GitHub license](https://img.shields.io/github/license/DavitTec/davit-logger-pro?style=for-the-badge)](https://github.com/DavitTec/davit-logger-pro)
 
-![davit-logger-screenshot](./assets/Screenshot%20at%202025-11-15%2013-45-15.png)
+![davit-logger-screenshot](./assets/img/davit-logger-screenshot.png)
 
 Universal logging specification and multi-language adapters for the Davit ecosystem.
 
