@@ -1,5 +1,16 @@
 # Davit Logger Pro
 
+[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/DavitTec/davit-logger-pro?style=for-the-badge&logo=github)](https://github.com/DavitTec/davit-logger-pro/tag)
+[![GitHub open issues](https://img.shields.io/github/issues-raw/DavitTec/davit-logger-pro?style=for-the-badge&label=Open%20Issues)](https://github.com/DavitTec/davit-logger-pro/issues)
+[![GitHub top language](https://img.shields.io/github/languages/top/DavitTec/davit-logger-pro?style=for-the-badge)](https://github.com/DavitTec/davit-logger-pro)
+[![GitHub license](https://img.shields.io/github/license/DavitTec/davit-logger-pro?style=for-the-badge)](https://github.com/DavitTec/davit-logger-pro)
+
+
+
+![davit-logger-screenshot](./assets/Screenshot%20at%202025-11-15%2013-45-15.png)
+
+
+
 Universal logging specification and multi-language adapters for the Davit ecosystem.
 
 For your ecosystem, logger should be:

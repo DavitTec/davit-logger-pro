@@ -1,0 +1,11 @@
+# ~/.shellcheckrc
+
+# Don't suggest [ -n "$VAR" ] over [ ! -z "$VAR" ]
+#disable=SC2236
+
+# Suggest ${VAR} in place of $VAR
+enable=require-variable-braces
+
+# stop with source warnings
+disable=SC1091
+

@@ -1,0 +1,61 @@
+#!/bin/bash
+# INSTALL – davit-logger deployment
+# Version: 0.2.0
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/" && pwd)"
+DOMAIN="davit"
+BIN_DIR="/opt/${DOMAIN}/bin"
+LIB_DIR="/opt/${DOMAIN}/lib/configs/davit-logger"
+
+get_version() {
+    local file="$1"
+    grep -m1 '^# Version:' "$file" | awk '{print $3}'
+}
+
+install_file() {
+    local src="$1" dest_dir="$2" perms="${3:-755}"
+    local version
+    version=$(get_version "$src")
+    local base
+    base=$(basename "$src")
+    sudo mkdir -p "$dest_dir"
+    sudo cp -v "$src" "$dest_dir/"
+    sudo chmod "$perms" "$dest_dir/$base"
+    echo "Installed $base v${version} → $dest_dir"
+}
+
+main() {
+    echo "=== davit-logger installer v0.2.0 ==="
+
+    # 1. Logger script
+    install_file "${ROOT_DIR}/scripts/davit-logger.sh" "$BIN_DIR" 755
+
+    # 2. Theme JSON
+    sudo mkdir -p "$LIB_DIR"
+    sudo cp -v "${ROOT_DIR}/lib/configs/davit-logger/loggin-theme.json" "$LIB_DIR/"
+    echo "Theme JSON → $LIB_DIR/loggin-theme.json"
+
+    # 3. Update .env if present in project root
+    if [[ -f "${ROOT_DIR}/.env" ]]; then
+        if ! grep -q '^LOGGER=' "${ROOT_DIR}/.env"; then
+            echo 'LOGGER="/opt/davit/bin/davit-logger.sh"' >> "${ROOT_DIR}/.env"
+            echo "Added LOGGER= to .env"
+        fi
+    fi
+
+    echo "Installation complete – you can now source /opt/davit/bin/davit-logger.sh"
+}
+
+uninstall() {
+    sudo rm -f "$BIN_DIR/davit-logger.sh"
+    sudo rm -rf "/opt/davit/lib/configs/davit-logger"
+    echo "Uninstalled davit-logger"
+}
+
+case "${1:-}" in
+    -i|--install) main ;;
+    -u|--uninstall) uninstall ;;
+    *) echo "Usage: $0 [-i|-u]"; exit 1 ;;
+esac

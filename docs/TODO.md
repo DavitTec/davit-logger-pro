@@ -13,6 +13,19 @@
 - PyPI publishing
 
 ---
+## v0.3.3
+
+| Priority | Task | Status | Notes |
+|----------|------|--------|-------|
+| High | Merge old README | Done | v0.3.1 integrated |
+| High | Configure .env/requirements | Done | Checked YAML/ENV |
+| Medium | VSCode launch.json | Done | Bash debug ready |
+| High | Create davit-logger.sh | Done | Basic functions |
+| High | Test script/log | Done | basic_test.sh |
+| Medium | Expand ROADMAP | Done | Phases detailed |
+| Low | Add more tests | Pending | Edge cases |
+| Medium | Multi-language stubs | Pending | Phase 3 |
+
 
 ## TODO Next
 
@@ -40,7 +53,7 @@ Now do this locally:
 
    ```bash
    touch ".gitignore" #or gitignore.sh -i <template>
-
+   
    git init
    git add .
    git commit -m "Initial commit: davit-logger-pro monorepo foundation"
