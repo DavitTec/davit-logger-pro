@@ -5,7 +5,9 @@
 [![GitHub top language](https://img.shields.io/github/languages/top/DavitTec/davit-logger-pro?style=for-the-badge)](https://github.com/DavitTec/davit-logger-pro)
 [![GitHub license](https://img.shields.io/github/license/DavitTec/davit-logger-pro?style=for-the-badge)](https://github.com/DavitTec/davit-logger-pro)
 
-![davit-logger-screenshot](./assets/img/davit-logger-screenshot.png)
+---
+
+![davit-logger-screenshot](./assets/Screenshot%20at%202025-11-15%2013-45-15.png)
 
 Universal logging specification and multi-language adapters for the Davit ecosystem.
 
@@ -130,17 +132,17 @@ Designed for:
 ```bash
 davit-logger-pro/
 │
-├── README.md ✅ 
+├── README.md ✅
 ├── VERSION
 ├── LICENSE
 │
-├── docs/ ✅ 
+├── docs/ ✅
 │   ├── charts/
 │   │    └── MERMAID_DIAGRAMS.mmd
 │   ├── SPEC_v1.0.md
 │   ├── FLOW.md
 │   ├── ARCHITECTURE.md
-│   ├── TODO.md ✅ 
+│   ├── TODO.md ✅
 │   └── ROADMAP.md
 │
 ├── spec/
@@ -181,7 +183,7 @@ Use adapter directly:
 or in Node:
 
 ```js
-const logger = require('./adapters/node-commonjs/logger');
+const logger = require("./adapters/node-commonjs/logger");
 ```
 
 ---
@@ -222,7 +224,7 @@ log_error "GEN001"
 ### Node (CommonJS) Example
 
 ```js
-const logger = require('./logger');
+const logger = require("./logger");
 
 logger.info("Application started");
 logger.warn("VAL002");
@@ -280,7 +282,7 @@ MIT License
 - Linux `/proc` filesystem
 - ANSI escape codes
 - JSON Schema Draft-07
-  
+
 ---
 
 ## Contributing
@@ -299,6 +301,6 @@ Davit Technologies (David Mullins)
 
 ## Version
 
- [This repository supersedes: `davit-logger` (private) v0.3.3]
+[This repository supersedes: `davit-logger` (private) v0.3.3]
 
-Version:  0.4.0-alpha
+Version: 0.4.0-alpha
