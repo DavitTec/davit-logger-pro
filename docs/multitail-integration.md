@@ -20,6 +20,8 @@ This repository ensures that **log structure, display, and tooling are version-c
    - Prevents drift between environments.
 2. **Version Control**
    - All configs (`.multitailrc`, scheme files, aliases) are tracked in Git.
+   - the location of `multitail` are lcated in `./configs/multitail/`
+   - the bash aliases (`aliases.sh`) are located in `./configs/multitail/bash/`
    - Changes to log formats and visualization are auditable.
 3. **Deployment Consistency**
    - LOGGER deploys both:
@@ -41,22 +43,24 @@ This repository ensures that **log structure, display, and tooling are version-c
 ## Directory Structure
 
 ```bash
-logger/
+davit-logger/
 ├── config/
 │   ├── multitail/
 │   │   ├── davit-base.conf
 │   │   ├── davit-admin.conf
 │   │   ├── davit-system.conf
 │   │   ├── davit-audit.conf
+│   │   ├── davit-projects.conf
 │   │   └── multitailrc.template
 │   ├── bash/
 │   │   └── aliases.sh
 │
 ├── logs/                # (optional test logs)
 ├── scripts/
-│   └── install.sh
+│   └── install.sh     # Optional if central INSTALL is not deployed
 │
 ├── docs/
+│   ├── multitail-integration.md    # THIS DOCUMENT
 │   ├── log-format.md
 │   ├── color-schemes.md
 │   └── disaster-recovery.md
@@ -98,12 +102,28 @@ TIMESTAMP | USER | LEVEL | CATEGORY | SUBCAT | CONTEXT | EXTRA | MODE=env | pid=
 
 ## Usage
 
-### Colored Multiview
+### Single view (Mate)
+
+```bash
+# Opens Mate Terminal scalled to 70% 
+alias logp='mate-terminal --zoom=0.70 --geometry=280x5+10+530 -t "DAVIT-PROJECT-LOGS" -e "tail -f /opt/davit/logs/davit-projects.log "'
+```
+
+
+
+### Colored Single view
 
 ```bash
 alias logallc='multitail \
-  -cS davit-admin  -wh 12 -F /opt/davit/lib/multitail/davit-admin-log.config -i /opt/davit/logs/davit-admin.log \
-  -cS davit-system -wh 12 -F /opt/davit/lib/multitail/davit-system-log.config -i /opt/davit/logs/davit-system.log'
+  -cS davit-admin  -wh 12 -F /opt/davit/lib/multitail/davit-projects-log.conf -i /opt/davit/logs/davit-projects.log
+```
+
+### Coloured Multiview
+
+```bash
+alias logallc='multitail \
+  -cS davit-admin  -wh 10 -F /opt/davit/lib/multitail/davit-admin-log.conf -i /opt/davit/logs/davit-admin.log \
+  -cS davit-system -wh 10 -F /opt/davit/lib/multitail/davit-system-log.conf -i /opt/davit/logs/davit-system.log'
 ```
 
 ------
@@ -118,7 +138,7 @@ alias logall='multitail \
 
 ------
 
-## Known Behavior / Limitations
+## Known Behaviour / Limitations
 
 ### Window Titles Disappear
 
@@ -194,6 +214,7 @@ cd logger
 5. Validate logs
 
 ```bash
+# Open multi window view 
 logallc
 ```
 
@@ -243,16 +264,16 @@ All changes must include:
 LOGGER is not just logging — it is:
 
 - A **format standard**
-- A **visualization system**
-- A **deployment artifact**
+- A **visualisation system**
+- A **deployment artefact**
 - A **compliance tool**
 
 Everything lives in one place, versioned, reproducible, and predictable.
 
 ------
 
-If you want, I can also generate:
+## TODO
 
-- `install.sh`
+- Develop fall back `install.sh`
 - a cleaner alias manager
-- or a “universal” multitail config that adapts to all your DAVIT logs automatically
+- a “universal” multitail config that adapts to all your DAVIT logs automatically
