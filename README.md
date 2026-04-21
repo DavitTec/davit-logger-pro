@@ -1,9 +1,6 @@
 # Davit Logger Pro
 
-[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/DavitTec/davit-logger-pro?style=for-the-badge&logo=github)](https://github.com/DavitTec/davit-logger-pro/tag)
-[![GitHub open issues](https://img.shields.io/github/issues-raw/DavitTec/davit-logger-pro?style=for-the-badge&label=Open%20Issues)](https://github.com/DavitTec/davit-logger-pro/issues)
-[![GitHub top language](https://img.shields.io/github/languages/top/DavitTec/davit-logger-pro?style=for-the-badge)](https://github.com/DavitTec/davit-logger-pro)
-[![GitHub license](https://img.shields.io/github/license/DavitTec/davit-logger-pro?style=for-the-badge)](https://github.com/DavitTec/davit-logger-pro)
+[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/DavitTec/davit-logger-pro?style=for-the-badge&logo=github)](https://github.com/DavitTec/davit-logger-pro/tag)[![GitHub open issues](https://img.shields.io/github/issues-raw/DavitTec/davit-logger-pro?style=for-the-badge&label=Open%20Issues)](https://github.com/DavitTec/davit-logger-pro/issues)[![GitHub top language](https://img.shields.io/github/languages/top/DavitTec/davit-logger-pro?style=for-the-badge)](https://github.com/DavitTec/davit-logger-pro)[![GitHub license](https://img.shields.io/github/license/DavitTec/davit-logger-pro?style=for-the-badge)](https://github.com/DavitTec/davit-logger-pro)
 
 ---
 
@@ -31,6 +28,7 @@ It provides:
 - Advanced system inspection logging (CPU, memory, ping, pipes, etc.)
 - Safe fallback behaviour (works without configure files)
 - Linux-first architecture (Windows/macOS support planned)
+- Multiview and colourised terminal windows (see  [multitail-integration.md](docs/multitail-integration.md) )
 
 This project replaces and evolves the private `davit-logger` v0.3.3 into a public, structured monorepo.
 

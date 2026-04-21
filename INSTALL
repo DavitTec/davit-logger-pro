@@ -25,10 +25,10 @@ export D_PRJ_VER="$(/opt/davit/bin/get-version.sh ./.env)"
 source /opt/davit/bin/davit-logger.sh
 
 
-source ".env" || {
-     echo "There is no \".env\"" >&2
-     exit 1
-}
+# source ".env" || {
+#      echo "There is no \".env\"" >&2
+#      exit 1
+# }
 
 export D_MODE="${MODE:-}"          # leave empty for auto-detection
 
