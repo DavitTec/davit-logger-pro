@@ -5,6 +5,25 @@ All notable changes to the ["https://github.com/DavitTec/davit-logger"](https://
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)/(_Davit Scheme v0.1.1_)
 
+## [unreleased]
+
+### 🐛 Bug Fixes
+
+Update logger with feat v1.3.x (7555680…)
+
+- fix: changed theme name (e1a98b9…)
+
+### 🚀 Features
+
+_(logger)_
+V1.3.2 - Add JSON output mode + improved console/routing control (edd141e…)
+
+- Added LOG_FORMAT=text|json support with structured fields
+- Enhanced davit_parse_flags with --json/--text
+- Improved \_dl_should_log robustness (no more arithmetic errors)
+- Better console control and routing flexibility
+- Updated test-05-log.sh with comprehensive coverage
+
 ## [1.4.15] - 2026-04-21 ([v1.4.15](https://github.com/DavitTec/davit-logger/releases/tag/v1.4.15))
 
 ### ⚙️ Miscellaneous Tasks

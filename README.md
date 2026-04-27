@@ -4,299 +4,172 @@
 
 ---
 
-![davit-logger-screenshot](./assets/Screenshot%20at%202025-11-15%2013-45-15.png)
+**Universal, production-grade logging framework** for the Davit ecosystem.
 
-Universal logging specification and multi-language adapters for the Davit ecosystem.
-
-For your ecosystem, logger should be:
-
-> A system-level utility + language adapters.
-
-Lightweight. Structured. Extensible. Linux-first.
+**Lightweight • Structured • JSON-ready • Console-controlled • Cross-project**
 
 ---
 
 ## Summary
 
-**davit-logger-pro** is a unified logging framework designed for cross-language consistency across the `/opt/davit` ecosystem.
+**davit-logger-pro** is the authoritative logging solution for the `/opt/davit` ecosystem.
 
-It provides:
+It provides a **single source of truth** for logging behaviour across Bash, Node.js, and future languages.
 
-- A formal logging specification (v1.0)
-- Shared theme and error configuration standards
-- Bash and Node (CommonJS) adaptors (initial release)
-- Advanced system inspection logging (CPU, memory, ping, pipes, etc.)
-- Safe fallback behaviour (works without configure files)
-- Linux-first architecture (Windows/macOS support planned)
-- Multiview and colourised terminal windows (see  [multitail-integration.md](docs/multitail-integration.md) )
+### Current Version: **1.5.0**
 
-This project replaces and evolves the private `davit-logger` v0.3.3 into a public, structured monorepo.
+### Core Features (v1.5.0)
 
----
+- **Bash Adapter v1.3.2** (highly mature)
+  - Full JSON structured output (`LOG_FORMAT=json`)
+  - Console control (`TERMINAL_OUTPUT=0/1`, `--no-console`, `--console`)
+  - Local + Central log routing (`LOG_TO_LOCAL`, `LOG_TO_CENTRAL`)
+  - Smart project detection (package.json + fallback)
+  - Category-based routing (`SYSTEM`, `ADMIN`, `AUDIT`, `PROJECT`)
+  - Robust flag parser (`--quiet`, `--verbose`, `--debug`, `--json`)
+  - Safe dynamic `LOG_LEVEL` changes
+  - Theme-based coloured terminal output
 
-## Philosophy
+- **Structured Logging Levels**
+  - `debug`, `info`, `warn`, `error`, `critical`, `success`, `header`, `todo`
 
-- One Logging SPEC
-- Multiple Language Adopters
-- Zero hard dependency on config files
-- Always fail-safe
-- Designed for system-level diagnostics
-- Production-safe defaults
+- **Production Safe**
+  - Graceful degradation when config files are missing
+  - No hard dependencies
+  - Works in `/opt/davit/development` and production paths
 
-If configuration exists → enhance behaviour  
-If configuration is missing → degrade gracefully
-
----
-
-## Core Features
-
-### Structured Logging
-
-- debug
-- info
-- warn
-- error
-- critical
-
-Each level has:
-
-- priority
-- color (theme-based)
-- optional error code
-- optional action hint
+- **Future-ready**
+  - JSON Schema for themes and error codes
+  - Planned: Node.js ESM adapter, Python, Go
 
 ---
 
-### Theme-Based CLI Rendering
+## Quick Start (Bash)
 
-Supports configurable:
+```bash
+# In your script
+export D_MODE="${D_MODE:-}"   # let logger auto-detect
 
-- ANSI color mapping
-- Level styling
-- Timestamp format
-- Max message length
-- Future extensibility (icons, bold, underline, etc.)
+source /opt/davit/bin/davit-logger.sh
 
-Default theme is embedded internally — logger never depends on external theme file.
+log_info "Application started successfully"
+log_debug "Detailed debug info"
+log_error "Something went wrong"
 
----
+# Advanced usage
+davit_parse_flags --debug --json "$@"
 
-### Error Code System
-
-Supports structured error definitions:
-
-```json
-{
-  "GEN001": {
-    "code": "GEN001",
-    "status": "error",
-    "message": "General validation error",
-    "action": "Check input and try again"
-  }
-}
+log_info "This will be logged as JSON"
 ```
 
-Allows:
+### Console & Output Control
 
-- Standardised project-wide errors
-- Actionable CLI output
-- Consistent cross-language behaviour
+Bash
 
----
+```
+export TERMINAL_OUTPUT=0          # Silent mode (files only)
+export LOG_FORMAT=json            # Structured output
+export LOG_TO_LOCAL=1
+export LOG_TO_CENTRAL=1
+```
 
-### Advanced System Logging (Linux-first)
+**Command-line flags** (via davit_parse_flags):
 
-Optional system inspection module:
+- --quiet → Errors only + no console
+- --verbose → Info level
+- --debug → Debug level + console
+- --json → JSON structured output
+- --no-console / --console
 
-- CPU temperature
-- Memory usage
-- Disk usage
-- Ping latency
-- Process alive check
-- Pipe/file descriptor check
-- Cache inspection
-
-Designed for:
-
-- DevOps scripts
-- Daemons
-- Monitoring tasks
-- Infrastructure automation
-
----
+------
 
 ## Repository Structure
 
-```bash
+Bash
+
+```
 davit-logger-pro/
-│
-├── README.md ✅
-├── VERSION
+├── README.md
+├── VERSION                 # 1.5.0
 ├── LICENSE
-│
-├── docs/ ✅
-│   ├── charts/
-│   │    └── MERMAID_DIAGRAMS.mmd
-│   ├── SPEC_v1.0.md
-│   ├── FLOW.md
-│   ├── ARCHITECTURE.md
-│   ├── TODO.md ✅
-│   └── ROADMAP.md
-│
-├── spec/
-│   ├── theme.schema.json
-│   ├── errors.schema.json
-│   └── logging.contract.md
-│
-├── config/
-│   ├── theme.default.json
-│   ├── errors.default.json
-│   └── defaults.json
-│
+├── davit-logger.sh         # Main Bash implementation (v1.3.2)
+├── scripts/test-05-log.sh  # Comprehensive test suite
 ├── adapters/
 │   ├── bash/
-│   └── node-commonjs/
-│
-└── examples/
+│   └── node-commonjs/      # Planned
+├── config/
+│   └── loggin-theme.json
+└── docs/
+    ├── SPEC_v1.0.md
+    ├── ARCHITECTURE.md
+    └── ROADMAP.md
 ```
 
----
+------
 
-## Installation (Linux)
+## Philosophy
 
-### Option 1 — Local Project Use
+- **One Logging Specification**, Multiple Adapters
+- Always fail-safe
+- Linux-first, production-oriented
+- Developer-friendly with beautiful terminal output
+- JSON-first for log aggregation (ELK, Loki, etc.)
 
-Clone into your project:
+------
 
-```bash
-git clone https://github.com/DavitTec/davit-logger-pro.git
+## Environment Variables
+
+| Variable        | Default | Description                    |
+| --------------- | ------- | ------------------------------ |
+| LOG_LEVEL       | INFO    | DEBUG/INFO/WARN/ERROR/CRITICAL |
+| TERMINAL_OUTPUT | 1       | 0 = disable console            |
+| LOG_TO_LOCAL    | 1       | Write to ./logs/<project>.log  |
+| LOG_TO_CENTRAL  | 1       | Write to /opt/davit/logs/      |
+| LOG_FORMAT      | text    | text or json                   |
+| D_MODE          | auto    | dev / stage / prod             |
+
+------
+
+## Example JSON Output
+
+JSON
+
+```
+{
+  "timestamp": "2026-04-27T22:15:38.822Z",
+  "level": "INFO",
+  "category": "PROJECT",
+  "project": "davit-logger-test",
+  "version": "1.0.3-test05",
+  "mode": "dev",
+  "user": "david",
+  "pid": 61230,
+  "script": "test-05-log.sh",
+  "message": "This is a JSON formatted message"
+}
 ```
 
-Use adapter directly:
+------
 
-```bash
-./adapters/bash/logger.sh
-```
+## Roadmap
 
-or in Node:
+- v1.6.0: Full Node.js adapter + unified error code system
+- v1.7.0: Python & Go adapters
+- v2.0.0: Central log management daemon + rotation policies
 
-```js
-const logger = require("./adapters/node-commonjs/logger");
-```
-
----
-
-### Option 2 — Global Install (Planned)
-
-Target path:
-
-```bash
-/opt/davit/
-    bin/davit-log
-    lib/logger/
-    config/
-```
-
-Install script (coming in v1.0 stable):
-
-```bash
-sudo ./install.sh --global
-```
-
----
-
-## Usage Examples
-
-### Bash Example
-
-```bash
-source logger.sh
-
-log_info "Application started"
-log_warn "VAL002"
-log_error "GEN001"
-```
-
----
-
-### Node (CommonJS) Example
-
-```js
-const logger = require("./logger");
-
-logger.info("Application started");
-logger.warn("VAL002");
-logger.error("GEN001");
-```
-
----
-
-### Example Output
-
-```bash
-[2026-03-03T14:22:01Z] [INFO] Application started
-[2026-03-03T14:22:03Z] [WARN] [VAL002] Slide exceeds word limit
- → Action: Trim content in MD file
-```
-
----
-
-## Environment Configuration
-
-Optional `.env` support:
-
-```bash
-LOGGER_LEVEL=debug
-LOGGER_THEME=./config/theme.json
-LOGGER_ERRORS=./config/errors.json
-LOGGER_OUTPUT=console
-```
-
-If missing:
-
-- Internal defaults are used.
-- Logger continues operating safely.
-
----
-
-## TODO
-
-- Planned: See [TODO.md](docs/TODO.md)
-
----
-
-## License
-
-MIT License
-
-- adapted to Davit ecosystem licensing policy.
-
----
-
-## References
-
-- POSIX Shell Standards
-- Node.js CommonJS
-- Linux `/proc` filesystem
-- ANSI escape codes
-- JSON Schema Draft-07
-
----
+------
 
 ## Contributing
 
-Internal Davit ecosystem project.
+Internal Davit Technologies project. Public contributions welcome after v2.0.
 
-Public contributions may be enabled in future releases.
-
----
+------
 
 ## Author
 
-Davit Technologies (David Mullins)
+**Davit Technologies** (David Mullins)
 
----
+------
 
-## Version
+Version: 1.5.0 — Stable with JSON + Full Console Control
 
-Version: 1.4.15
