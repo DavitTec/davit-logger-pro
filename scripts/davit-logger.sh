@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #=====================================================================
 # scripts/davit-logger.sh
-# Version: 1.2.15
+# Version: 1.2.16
 # Description: STABLE POSTMASTER – Single authoritative logger for SYSTEM/ADMIN/AUDIT/PROJECT
 #              Auto-detects from package.json or folder name. Works anywhere (dev or prod).
 # Supports:    log info "msg", log_info, log_debug, log_warn, log_error, log_success, log_header, log_term, log_todo
@@ -54,9 +54,9 @@ _dl_load_theme() {
 }
 
 for theme in \
-    "${_D_LIB}/configs/davit-logger/loggin-theme.json" \
-    "${_D_BIN}/../lib/configs/davit-logger/loggin-theme.json" \
-    "${HOME}/.config/davit/loggin-theme.json"
+    "${_D_LIB}/configs/davit-logger/logging-theme.json" \
+    "${_D_BIN}/../lib/configs/davit-logger/logging-theme.json" \
+    "${HOME}/.config/davit/logging-theme.json"
 do
     _dl_load_theme "$theme" 2>/dev/null && break
 done

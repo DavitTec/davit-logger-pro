@@ -299,6 +299,4 @@ Davit Technologies (David Mullins)
 
 ## Version
 
-[This repository supersedes: `davit-logger` (private) v0.3.3]
-
-Version: 0.4.0-alpha
+Version: 1.4.15
