@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Script-ID: 996337da-1724-4a8b-b80d-72921d64a659
+# Script-ID: 8796413b-0a78-4b78-9d93-7efd11b1db7c
 #=====================================================================
 # davit-logger.sh
-# Version: 1.3.2
-# Description: STABLE POSTMASTER – Authoritative DAVIT Logger with Text + JSON support,
-#              Console control, Local/Central routing, and robust detection.
+# Version: 1.4.2
+# Description: STABLE POSTMASTER – Authoritative Davit Logger
+#              JSON + Text output, robust project detection, console control
 #=====================================================================
 
 set -Eeo pipefail
@@ -17,7 +17,7 @@ readonly _D_LOGGER_LOADED=1
 readonly user=${SUDO_USER:-$USER}
 
 # ------------------------------------------------------------------
-# Core DAVIT System Paths
+# Core Paths
 # ------------------------------------------------------------------
 readonly _D_ROOT="/opt/davit"
 readonly _D_BIN="${_D_ROOT}/bin"
@@ -30,10 +30,10 @@ mkdir -p "${_D_LOGS}" 2>/dev/null || true
 # Configurable Switches
 # ------------------------------------------------------------------
 LOG_LEVEL=${LOG_LEVEL:-INFO}
-TERMINAL_OUTPUT=${TERMINAL_OUTPUT:-1}      # 1 = console on, 0 = off
-LOG_TO_LOCAL=${LOG_TO_LOCAL:-1}            # Write to project ./logs/
-LOG_TO_CENTRAL=${LOG_TO_CENTRAL:-1}        # Write to /opt/davit/logs/
-LOG_FORMAT=${LOG_FORMAT:-text}             # text | json
+TERMINAL_OUTPUT=${TERMINAL_OUTPUT:-1}
+LOG_TO_LOCAL=${LOG_TO_LOCAL:-1}
+LOG_TO_CENTRAL=${LOG_TO_CENTRAL:-1}
+LOG_FORMAT=${LOG_FORMAT:-text}          # text | json
 
 # ------------------------------------------------------------------
 # Colours
@@ -70,7 +70,7 @@ do
 done
 
 # ------------------------------------------------------------------
-# Safe Bootstrap
+# Bootstrap
 # ------------------------------------------------------------------
 _dl_bootstrap_log() {
     local level="$1" msg="$2"
@@ -81,39 +81,10 @@ _dl_bootstrap_log() {
 }
 
 # ------------------------------------------------------------------
-# MODE Detection
-# ------------------------------------------------------------------
-_dl_detect_mode() {
-    local detected=""
-    if [[ -n "${D_MODE:-}" ]]; then
-        detected="${D_MODE}"
-    elif [[ -f "${D_PRJ_PATH:-}/.env" ]]; then
-        detected=$(grep -E '^D_MODE=' "${D_PRJ_PATH}/.env" 2>/dev/null | cut -d= -f2- | tr -d ' "')
-    fi
-
-    detected="$(printf "%s" "${detected}" | tr '[:upper:]' '[:lower:]')"
-
-    if [[ -z "${detected}" ]]; then
-        if [[ "${D_PRJ_PATH:-}" == /opt/davit/development/* ]]; then
-            detected="dev"
-        else
-            detected="prod"
-        fi
-    fi
-
-    case "${detected}" in
-        dev|stage|prod) ;;
-        *) detected="prod" ;;
-    esac
-
-    export D_MODE="${detected}"
-}
-
-# ------------------------------------------------------------------
-# Robust Context Detection
+# Final Simple & Reliable Detection (v1.4.0)
 # ------------------------------------------------------------------
 _dl_detect_context() {
-    local script_path script_dir pkg_json search_dir folder_name
+    local script_path script_dir rel_path
 
     script_path="${BASH_SOURCE[1]:-${0}}"
     script_path="$(realpath -s "$script_path" 2>/dev/null || echo "$script_path")"
@@ -121,50 +92,55 @@ _dl_detect_context() {
 
     export D_PRJ_CALL="${script_path}"
 
-    # Prefer current directory for search
-    search_dir="${PWD:-$script_dir}"
-
-    # Find package.json
-    pkg_json=""
-    local dir="$search_dir"
-    while [[ "$dir" != "/" ]]; do
-        if [[ -f "$dir/package.json" ]]; then
-            pkg_json="$dir/package.json"
-            break
+    # MODE: Force DEV if under development tree
+    if [[ -z "${D_MODE:-}" ]]; then
+        if [[ "$script_dir" == /opt/davit/development/* || "$PWD" == /opt/davit/development/* ]]; then
+            export D_MODE="dev"
+        else
+            export D_MODE="prod"
         fi
-        dir="$(dirname "$dir")"
-    done
-
-    if [[ -n "$pkg_json" ]] && command -v jq >/dev/null 2>&1; then
-        export D_PRJ_NAME="${D_PRJ_NAME:-$(jq -r '.name // "unknown"' "$pkg_json" 2>/dev/null | tr '[:upper:]' '[:lower:]' | tr ' ' '_')}"
-        export D_PRJ_VER="${D_PRJ_VER:-$(jq -r '.version // "0.0.0"' "$pkg_json" 2>/dev/null)}"
-        export D_PRJ_PATH="$(dirname "$pkg_json")"
-    else
-        folder_name="$(basename "$script_dir")"
-        export D_PRJ_NAME="${D_PRJ_NAME:-${folder_name:-unknown}}"
-        export D_PRJ_VER="${D_PRJ_VER:-unknown}"
-        export D_PRJ_PATH="${D_PRJ_PATH:-$script_dir}"
     fi
+
+    # Project Name: Take folder directly under development/
+    if [[ "$script_dir" == /opt/davit/development/* || "$PWD" == /opt/davit/development/* ]]; then
+        local base="${PWD#/opt/davit/development/}"
+        export D_PRJ_NAME="${base%%/*}"
+    else
+        export D_PRJ_NAME="${D_PRJ_NAME:-unknown}"
+    fi
+
+    export D_PRJ_NAME="${D_PRJ_NAME:-unknown}"
+
+    if [[ ! ${D_PRJ_NAME} == "unknown" ]]; then
+       src="/opt/davit/development/${D_PRJ_NAME}/package.json"
+			 if [[ -f $src ]];then
+			     D_PRJ_VER=$(jq -r .version "${src}")
+			 else
+			    src="/opt/davit/development/${D_PRJ_NAME}/.env"
+			    if [[ -f $src ]];then
+			     D_PRJ_VER=$(grep '^VERSION=' "${src}" | cut -d'=' -f2)
+					fi
+			fi
+		fi
+
+    export D_PRJ_VER="${D_PRJ_VER:-unknown}"
+    export D_PRJ_PATH="${D_PRJ_PATH:-${PWD}}"
 
     export D_PRJ_FOLDER="${D_PRJ_NAME}"
     export D_PRJ_BIN="${D_PRJ_PATH}/bin"
 
-    # Local project log
-    if [[ "${D_PRJ_NAME}" != "unknown" && -n "${D_PRJ_NAME}" && "${D_PRJ_NAME}" != "generic" ]]; then
+    # Local project log only for real projects
+    if [[ "${D_PRJ_NAME}" != "unknown" && "${D_PRJ_NAME}" != "davit" && "${D_PRJ_NAME}" != "generic" ]]; then
         export D_PROJECT_LOG="${D_PRJ_PATH}/logs/${D_PRJ_NAME}.log"
         mkdir -p "${D_PRJ_PATH}/logs" 2>/dev/null || true
     else
         export D_PROJECT_LOG=""
     fi
 
-    _dl_detect_mode
     export D_CATEGORY="${D_CATEGORY:-PROJECT}"
 
     if [[ -z "${LOG_LEVEL:-}" ]]; then
-        case "${D_MODE}" in
-            dev) LOG_LEVEL="DEBUG" ;;
-            *)   LOG_LEVEL="INFO" ;;
-        esac
+        [[ "${D_MODE}" == "dev" ]] && LOG_LEVEL="DEBUG" || LOG_LEVEL="INFO"
         export LOG_LEVEL
     fi
 }
@@ -199,15 +175,16 @@ _dl_build_line() {
     pid=$$
     script_name="$(basename "${0}")"
 
-    mode_str="MODE:${D_MODE}"
-    if [[ "${D_PRJ_NAME}" != "unknown" ]]; then
-        tag="${D_PRJ_NAME} | ${D_PRJ_VER}"
+    mode_str="MODE:${D_MODE:-prod}"
+
+    if [[ "${D_PRJ_NAME:-unknown}" != "unknown" && "${D_PRJ_NAME:-unknown}" != "davit" ]]; then
+        tag="${D_PRJ_NAME} | ${D_PRJ_VER:-unknown}"
     else
         tag="generic | -"
     fi
 
     printf "%s | %s | %s | %s | %s | %s | pid:%s | script:%s | %s" \
-        "$ts" "$user" "$level" "${D_CATEGORY}" "$tag" "$mode_str" "$pid" "$script_name" "$msg"
+        "$ts" "$user" "$level" "${D_CATEGORY:-PROJECT}" "$tag" "$mode_str" "$pid" "$script_name" "$msg"
 }
 
 # ------------------------------------------------------------------
@@ -247,7 +224,6 @@ _dl_write() {
     msg="$*"
     [[ -z "$msg" ]] && msg="No message"
 
-    # Build line
     if [[ "${LOG_FORMAT}" == "json" ]]; then
         line=$(_dl_build_json "$level" "$msg")
         clean_line="$line"
@@ -256,7 +232,7 @@ _dl_write() {
         clean_line=$(printf "%s" "$line" | sed 's/\x1B\[[0-9;]*[a-zA-Z]//g')
     fi
 
-    # Console
+    # Console output
     if [[ "${TERMINAL_OUTPUT}" == "1" ]]; then
         if [[ "${LOG_FORMAT}" == "json" ]]; then
             printf "%s\n" "$line" >&1
@@ -289,7 +265,7 @@ _dl_write() {
 }
 
 # ------------------------------------------------------------------
-# Level Filter (Robust)
+# Level Filter
 # ------------------------------------------------------------------
 _dl_should_log() {
     local wanted="${1:-INFO}"
@@ -356,8 +332,10 @@ log() {
         } >> "${D_PROJECT_LOG}"
     fi
 
+logger_ver=$(get-version.sh /opt/davit/bin/davit-logger.sh)
+
     if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-        log_header "=== DAVIT-LOGGER v1.3.2 – STABLE POSTMASTER ==="
+        log_header "=== DAVIT-LOGGER v${logger_ver} – STABLE POSTMASTER ==="
         log_info "Format:${LOG_FORMAT} Console:${TERMINAL_OUTPUT} Local:${LOG_TO_LOCAL} Central:${LOG_TO_CENTRAL}"
         log_success "Logger ready"
     fi
