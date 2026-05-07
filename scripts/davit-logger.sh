@@ -332,7 +332,7 @@ log() {
         } >> "${D_PROJECT_LOG}"
     fi
 
-logger_ver=$(get-version.sh /opt/davit/bin/davit-logger.sh)
+logger_ver=$($_D_BIN/get-version.sh /opt/davit/bin/davit-logger.sh)
 
     if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         log_header "=== DAVIT-LOGGER v${logger_ver} – STABLE POSTMASTER ==="
