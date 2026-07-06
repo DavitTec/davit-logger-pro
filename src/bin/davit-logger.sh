@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Script-ID: 8796413b-0a78-4b78-9d93-7efd11b1db7c
 # ==============================================================================
-# Script      : src/davit-logger.sh
+# Script      : src/bin/davit-logger.sh
 # Description : Davit Logger - STABLE POSTMASTER – Authoritative Davit Logger
 #               JSON + Text output, robust project detection, console control
 # Author      : David Mullins
