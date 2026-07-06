@@ -6,7 +6,7 @@
 #               JSON + Text output, robust project detection, console control
 # Author      : David Mullins
 # Created     : 2025-11-02
-# Version     : 1.4.3
+# Version     : 1.4.4
 # Project     : davit-logger
 # Alias       : logger
 # Bin-Name    : davit-logger.sh
@@ -279,10 +279,19 @@ _dl_write() {
 		[[ "$level" == "ERROR" || "$level" == "CRITICAL" ]] && files+=("${_D_LOGS}/davit.log")
 	fi
 
+	# /opt/davit/ log dirs are shared within the davit group (setgid, e.g.
+	# drwxrws---); a restrictive umask still creates each new file
+	# non-group-writable, so whichever user creates a log file first blocks
+	# every other group member from appending to it later. Force
+	# group-writable (002) only around these writes, then restore.
+	local _dl_prev_umask
+	_dl_prev_umask="$(umask)"
+	umask 002
 	for f in "${files[@]}"; do
 		mkdir -p "$(dirname "$f")" 2>/dev/null || true
 		printf "%s\n" "$clean_line" >>"$f"
 	done
+	umask "$_dl_prev_umask"
 }
 
 # ------------------------------------------------------------------
@@ -377,10 +386,16 @@ log() {
 	_dl_detect_context
 
 	if [[ -n "${D_PROJECT_LOG}" && (! -f "${D_PROJECT_LOG}" || -z "$(head -c 100 "${D_PROJECT_LOG}" 2>/dev/null)") ]]; then
+		# See _dl_write() — force group-writable so the next user to append
+		# to this project log (possibly a different davit-group member)
+		# isn't blocked by a restrictive creation umask.
+		_dl_prev_umask="$(umask)"
+		umask 002
 		{
 			echo "# DAVIT LOG HEADER - PROJECT: ${D_PRJ_NAME} | VERSION: ${D_PRJ_VER} | MODE: ${D_MODE} | Created: $(date)"
 			echo "# ======================================================="
 		} >>"${D_PROJECT_LOG}"
+		umask "$_dl_prev_umask"
 	fi
 
 	logger_ver=$($_D_BIN/get-version.sh /opt/davit/bin/davit-logger.sh)
