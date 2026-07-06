@@ -7,10 +7,10 @@
 
 | ID    | Type    | Status | Title                  | Created    | Link |
 |-------|---------|--------|------------------------|------------|------|
-| 00001 | FIX | 📌 IN_PROGRESS | Fix version variables to align with new system davit.config | 2026-06-19 | [details](./ISSUES/1-[IN_PROGRESS]_fix-version-variables-to-align-with-new-system-davit-config.md) |
+| (no open issues) | | | | |
 
 ## ✅ Resolved / Closed Issues
 
 | ID    | Type    | Status | Title                  | Created    | Link |
 |-------|---------|--------|------------------------|------------|------|
-| (no closed issues) | | | | |
+| 00001 | FIX | 📌 DONE | Fix version variables to align with new system davit.config | 2026-06-19 | [details](./ISSUES/1-[DONE]_fix-version-variables-to-align-with-new-system-davit-config.md) |

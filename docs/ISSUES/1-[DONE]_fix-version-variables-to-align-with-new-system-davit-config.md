@@ -1,10 +1,10 @@
 ---
 id: 1
 type: FIX
-status: IN_PROGRESS
+status: DONE
 title: Fix version variables to align with new system davit.config
 created: 2026-06-19
-updated: 2026-07-06
+updated: 2026-07-07
 git_branch: fix/update-variables-alignements-v2.0.0
 scope: CROSS-PROJECT
 affects: davit-logger.sh, .env
