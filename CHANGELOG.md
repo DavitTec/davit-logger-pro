@@ -5,6 +5,30 @@ All notable changes to the ["/DavitTec/davit-logger"](/DavitTec/davit-logger) pr
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)/(_Davit Scheme v0.1.2_)
 
+## [1.6.1] - 2026-07-06 ([v1.6.1](/DavitTec/davit-logger/releases/tag/v1.6.1))
+
+### 🐛 Bug Fixes
+
+Force group-writable umask around log file writes (b18a1cd…)
+
+/opt/davit/*/logs/ dirs are shared within the davit group (setgid,
+e.g. drwxrws---), but _dl_write() and the project-log-header init
+block created new log files under whatever umask the calling process
+had, so a file first created by one user (e.g. david, 640) blocked
+every other group member (e.g. davit) from appending to it later.
+
+Surfaced by: `sudo -u davit scripts/install.sh --all` failing with
+"Permission denied" writing to this project's own
+logs/davit-logger.log, which had been created earlier under david.
+
+Wraps each write site in umask 002 / restore, so new log files are
+always created 664 regardless of the caller's umask. Existing files
+created before this fix still need a one-time chmod g+w.
+
+### 📚 Documentation
+
+Close issue #1 (fixed and merged in v1.6.0) (59d192a…)
+
 ## [1.6.0] - 2026-07-06 ([v1.6.0](/DavitTec/davit-logger/releases/tag/v1.6.0))
 
 ### ⚙️ Miscellaneous Tasks
@@ -53,6 +77,8 @@ Add package version check (966e347…)
 INSTALL script (af7c815…)
 
 ### 📚 Documentation
+
+Update CHANGELOG for v1.6.0 (4ba7d14…)
 
 Update CHANGELOG (8c6f3f7…)
 
