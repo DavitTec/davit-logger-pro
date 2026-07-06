@@ -1,12 +1,128 @@
+#!/usr/bin/env bash
+# Script-ID: aa1c3195-8e80-4658-947e-58eb80db64cc
+# ==============================================================================
+# Script      : scripts/install.sh
+# Description : Davit Logger Pro - Professional Installation Script
+# Version     : 0.5.0
+# Author      : David Mullins
+# ==============================================================================
 
-# Copy all scheme files
-#cp config/multitail/davit-*.conf /opt/davit/lib/multitail/
+set -euo pipefail
 
-# Create composite (two options)
-# Option A – include:
-#cp config/multitail/davit-multitail.conf /opt/davit/lib/multitail/
+readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly DIST_DIR="${PROJECT_ROOT}/dist"
 
-# Option B – concatenate (more robust for some environments)
-cat config/multitail/davit-base.conf \
-    config/multitail/davit-*.conf \
-    > /opt/davit/lib/multitail/davit-multitail.conf
+# ──────────────────────────────────────────────────────────────────────────────
+# Metadata - Force correct project context before sourcing logger
+# ──────────────────────────────────────────────────────────────────────────────
+export D_CATEGORY="${D_CATEGORY:-PROJECT}"
+export D_MODE="${D_MODE:-}"                     # Let logger auto-detect
+export D_PRJ_NAME="${D_PRJ_NAME:-davit-logger}" # Explicit for installer
+export D_PRJ_VER="${D_PRJ_VER:-}"               # Will be detected from package.json or get-version
+
+# Source the LOCAL development version of the logger (dist/ may not exist yet)
+logger_src="${PROJECT_ROOT}/src/davit-logger.sh"
+
+# shellcheck disable=SC1091,SC1094
+if [[ -f "$logger_src" ]]; then
+	source "$logger_src"
+else
+	echo "ERROR: davit-logger.sh not found at $logger_src" >&2
+	exit 1
+fi
+
+# Get installer version
+this_SCRIPT_VERSION="$(/opt/davit/bin/get-version.sh "$0" 2>/dev/null || echo "0.3.5")"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Helper Functions
+# ──────────────────────────────────────────────────────────────────────────────
+install_file() {
+	local src="$1"
+	local dest_dir="$2"
+	local perms="${3:-755}"
+	local version base
+
+	[[ -f "$src" ]] || {
+		log_error "Source file not found: $src"
+		return 1
+	}
+
+	version=$(/opt/davit/bin/get-version.sh "$src" 2>/dev/null || echo "unknown")
+	base=$(basename "$src")
+
+	mkdir -p "$dest_dir"
+	cp "$src" "$dest_dir/$base"
+	chmod "$perms" "$dest_dir/$base"
+
+	log_success "Installed $base v${version} → $dest_dir"
+}
+
+main() {
+	log_header "=== davit-logger installer v${this_SCRIPT_VERSION} ==="
+
+	[[ -d "$DIST_DIR" ]] || {
+		log_error "dist/ not found — run scripts/build.sh first"
+		exit 1
+	}
+
+	log_info "Project detected: ${D_PRJ_NAME} v${D_PRJ_VER} (MODE=${D_MODE})"
+
+	# 1. Install main logger script
+	install_file "${DIST_DIR}/bin/davit-logger.sh" "${_D_BIN}" 755
+
+	# 2. Install theme
+	local theme_src="${DIST_DIR}/configs/davit-logger/logging-theme.json"
+	if [[ -f "$theme_src" ]]; then
+		mkdir -p "${_D_LIB}/configs/davit-logger"
+		cp "$theme_src" "${_D_LIB}/configs/davit-logger/logging-theme.json"
+		log_success "Theme JSON installed → ${_D_LIB}/configs/davit-logger/logging-theme.json"
+	else
+		log_warn "Theme file not found at $theme_src"
+	fi
+
+	# 3. Update .env with LOGGER path
+	local env_file="${PROJECT_ROOT}/.env"
+	local logger_path="${_D_BIN}/davit-logger.sh"
+
+	if [[ -f "$env_file" ]]; then
+		if grep -q "^LOGGER=" "$env_file"; then
+			sed -i "s|^LOGGER=.*|LOGGER=${logger_path}|" "$env_file"
+			log_info "Updated LOGGER= in .env"
+		else
+			echo "LOGGER=${logger_path}" >>"$env_file"
+			log_info "Added LOGGER= to .env"
+		fi
+	else
+		echo "# Davit Environment" >"$env_file"
+		echo "LOGGER=${logger_path}" >>"$env_file"
+		log_info "Created new .env with LOGGER path"
+	fi
+
+	log_success "Installation complete!"
+	log_term "You can now source ${logger_path} in your scripts."
+	log_info "Test with: scripts/test-05-log.sh"
+}
+
+uninstall() {
+	log_header "=== Uninstalling davit-logger ==="
+	rm -f "${_D_BIN}/davit-logger.sh"
+	rm -rf "${_D_LIB}/configs/davit-logger"
+	log_success "Uninstallation completed."
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Main
+# ──────────────────────────────────────────────────────────────────────────────
+case "${1:-}" in
+-i | --install | "")
+	main
+	;;
+-u | --uninstall)
+	uninstall
+	;;
+*)
+	echo "Usage: $0 [-i|--install | -u|--uninstall]"
+	exit 1
+	;;
+esac
