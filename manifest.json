@@ -8,20 +8,6 @@
   "artifact_id": "667e5320-0867-49df-897b-7ab570052ef2",
   "artifacts": [
     {
-      "name": "davit-logger.sh",
-      "path": "src",
-      "bin_name": "davit_logger",
-      "type": "bash",
-      "id_type": "script-id",
-      "script_id": "8796413b-0a78-4b78-9d93-7efd11b1db7c",
-      "version": "1.4.3",
-      "alias": "logger",
-      "desc_short": "Davit Logger - STABLE POSTMASTER – Authoritative Davit Logger",
-      "last_updated": "2026-07-06T22:01:38Z",
-      "status": "develop",
-      "last_issue": ""
-    },
-    {
       "name": "logging-theme.json",
       "path": "src/configs/davit-logger",
       "bin_name": "davit_logger",
