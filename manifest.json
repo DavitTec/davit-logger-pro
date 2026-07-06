@@ -9,8 +9,8 @@
   "artifacts": [
     {
       "name": "logging-theme.json",
-      "path": "src/configs/davit-logger",
-      "bin_name": "davit_logger",
+      "path": "src/lib/configs/davit-logger",
+      "bin_name": "",
       "type": "json",
       "id_type": "schema-id",
       "schema_id": "a5a61348-fb27-4d97-b252-eefa60a84c1b",
@@ -23,7 +23,7 @@
     },
     {
       "name": "davit-logger.sh",
-      "path": "src",
+      "path": "src/bin",
       "bin_name": "davit-logger.sh",
       "type": "bash",
       "id_type": "script-id",
