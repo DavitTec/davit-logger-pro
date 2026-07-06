@@ -1,11 +1,89 @@
 # Changelog
 
-All notable changes to the ["https://github.com/DavitTec/davit-logger"](https://github.com/DavitTec/davit-logger) project will be documented in this file.
+All notable changes to the ["/DavitTec/davit-logger"](/DavitTec/davit-logger) project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)/(_Davit Scheme v0.1.1_)
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)/(_Davit Scheme v0.1.2_)
 
-## [1.5.0] - 2026-04-27 ([v1.5.0](https://github.com/DavitTec/davit-logger/releases/tag/v1.5.0))
+## [1.6.0] - 2026-07-06 ([v1.6.0](/DavitTec/davit-logger/releases/tag/v1.6.0))
+
+### ⚙️ Miscellaneous Tasks
+
+Bump project_version to 1.6.0 (c858e00…)
+
+Also fixes a stale header comment in src/bin/davit-logger.sh left over
+from the src/ restructuring (still said "Script: src/davit-logger.sh").
+
+Restore executable bit on build.sh/install.sh (f222444…)
+
+Re-register davit-logger.sh in manifest.json with correct bin_name (ded4a28…)
+
+Unregister davit-logger.sh from manifest.json (da78295…)
+
+Re-adding next to pick up the new Bin-Name header (preserves the literal
+davit-logger.sh filename instead of the auto-derived davit_logger).
+
+Register src/configs/davit-logger/logging-theme.json in manifest.json (376d17f…)
+
+Register src/davit-logger.sh in manifest.json (4ae1055…)
+
+### 🐛 Bug Fixes
+
+Correct logging-theme.json version in manifest.json (055655d…)
+
+manifest add couldn't read the version from JSON artifacts (bug in
+the manifest project's extract_metadata, fixed separately); backfilling
+the correct 1.4.3 here now that manifest_manager.sh supports it.
+
+Align version-variable detection and restructure src/ for dist build [#1](/DavitTec/davit-logger/issues/1) (7c404fc…)
+
+_dl_detect_context() now reads PROJECT_VERSION= (falling back to VERSION=)
+so D_PRJ_VER no longer shows "unknown" for projects using the new .env
+template. Moves davit-logger.sh and its theme JSON into src/, rewrites
+scripts/build.sh (was a stray copy from the generate-env project) to
+assemble dist/, and rewrites scripts/install.sh to deploy from dist/
+instead of scripts/. Also fixes a loggin-theme.json -> logging-theme.json
+typo that silently broke theme loading, and drops the superseded root
+INSTALL script now that scripts/install.sh covers it.
+
+Missing bin root (f40b90d…)
+
+Add package version check (966e347…)
+
+INSTALL script (af7c815…)
+
+### 📚 Documentation
+
+Update CHANGELOG (8c6f3f7…)
+
+### 🚜 Refactor
+
+Mirror src/ layout to the real /opt/davit deploy targets (c7cb6f8…)
+
+Manifest-driven build.sh/install.sh, matching manifest project's pattern (7cb6d89…)
+
+Replaces the hardcoded copy/paste build.sh and install.sh with the
+manifest-driven pattern already proven in the manifest and generate-env
+projects: build.sh assembles dist/ from manifest.json's artifact list and
+writes an enriched dist/manifest.json (dist_path + sha256); install.sh
+reads dist/manifest.json and deploys to ${DAVIT_ROOT}/<dist_path>, gated
+by a GADM identity check (must run as the davit user), a PROJECT_STATUS/
+branch deploy-context check, per-artifact status ("deployed"/--force),
+and pre-install backups.
+
+Also fixes an edge case the reference pattern doesn't handle: manifest
+paths for artifacts that sit directly in src/ (not a subdirectory) are
+exactly "src", and "${path#src/}" doesn't strip that — it would leak a
+literal "src" segment into dist/ and the install target. Added
+_strip_src_prefix() to handle both cases correctly.
+
+Also adds a Bin-Name header to src/davit-logger.sh: it's a sourced
+library (source "/opt/davit/bin/davit-logger.sh" appears throughout the
+DAVIT ecosystem), not an aliased CLI tool, so it must keep its literal
+filename in dist/ and /opt/davit/bin/ rather than the auto-derived
+bin_name ("davit_logger") the manifest-driven build otherwise assumes.
+
+## [1.5.0] - 2026-04-27 ([v1.5.0](/DavitTec/davit-logger/releases/tag/v1.5.0))
 
 ### 🐛 Bug Fixes
 
@@ -24,11 +102,11 @@ V1.3.2 - Add JSON output mode + improved console/routing control (edd141e…)
 
 - Added LOG_FORMAT=text|json support with structured fields
 - Enhanced davit_parse_flags with --json/--text
-- Improved \_dl_should_log robustness (no more arithmetic errors)
+- Improved _dl_should_log robustness (no more arithmetic errors)
 - Better console control and routing flexibility
 - Updated test-05-log.sh with comprehensive coverage
 
-## [1.4.15] - 2026-04-21 ([v1.4.15](https://github.com/DavitTec/davit-logger/releases/tag/v1.4.15))
+## [1.4.15] - 2026-04-21 ([v1.4.15](/DavitTec/davit-logger/releases/tag/v1.4.15))
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -67,4 +145,4 @@ Add mutitail configs (05694b6…)
 
 Add v0.3.3 package (89ba529…)
 
-## [0.4.0] - 2026-03-03 ([v0.4.0](https://github.com/DavitTec/davit-logger/releases/tag/v0.4.0))
+## [0.4.0] - 2026-03-03 ([v0.4.0](/DavitTec/davit-logger/releases/tag/v0.4.0))
