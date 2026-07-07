@@ -7,7 +7,7 @@
 
 | ID    | Type    | Status | Title                  | Created    | Link |
 |-------|---------|--------|------------------------|------------|------|
-| (no open issues) | | | | |
+| 00002 | TODO | 📌 NEW | Draft ANDES.md: log file location, rotation, archiving, query & config management procedures | 2026-07-07 | [details](./ISSUES/2-[NEW]_draft-andes-md-log-file-location-rotation-archiving-query-config-management-procedures.md) |
 
 ## ✅ Resolved / Closed Issues
 

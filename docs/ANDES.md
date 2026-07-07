@@ -1,7 +1,7 @@
 ---
 
 title: Analysis and Design
-version: 0.1.0
+version: 0.2.1
 status: draft
 author: David Mullins
 project: davit-logger
@@ -10,7 +10,7 @@ Language: Bash (primary); Node.js / Python / Go (planned adapters)
 target_platform: Linux Mint / DAVIT OS
 design_method: SSADM
 created: 2026-06-27
-last_updated: 2026-06-27
+last_updated: 2026-07-07
 docid: f4a5c39d-c3bf-458f-b8a1-64e86845ee73
 ---
 
@@ -154,9 +154,9 @@ davit-logger sits at the base of the DAVIT observability stack:
 
 - Log aggregation, indexing, or search
 - Event correlation or pattern detection (belongs to DEMP)
-- Log rotation or archival (belongs to system administration layer)
+- Execution of log rotation/archival (performed by `logrotate` and host operations, not davit-logger code — see §12 Log File Management for the location, rotation, and archiving contract this module commits to)
 - Monitoring dashboards or alerting
-- Multi-language adapters (planned; see §14 Future Work)
+- Multi-language adapters (planned; see §15 Future Work)
 
 ---
 
@@ -375,16 +375,25 @@ davit-logger runs inside the host Linux environment under the DAVIT framework ro
 /opt/davit/
 ├── bin/
 │   └── davit-logger.sh          # Installed logger (sourced by callers)
+├── etc/
+│   └── davit.conf               # Central config — source of DAVIT_LOGS_DIR etc. (§12.2)
 ├── lib/
 │   └── configs/davit-logger/
 │       └── loggin-theme.json    # Colour theme
-└── logs/
+└── var/log/                     # DAVIT_LOGS_DIR — canonical (§12.1)
     ├── davit.log                # MAIN / default
     ├── davit-audit.log          # AUDIT category
     ├── davit-admin.log          # ADMIN category
     ├── davit-system.log         # SYSTEM category
-    └── davit-projects.log       # PROJECT category (central copy)
+    ├── davit-projects.log       # PROJECT category (central copy)
+    └── archive/                 # Rotated + compressed logs (§12.4)
 ```
+
+> **Target state.** As of this revision, `davit-logger.sh` still writes to
+> the legacy `/opt/davit/logs/` and does not yet source `davit.conf`. See
+> §12 Log File Management and
+> [2do #2](./ISSUES/2-[NEW]_draft-andes-md-log-file-location-rotation-archiving-query-config-management-procedures.md)
+> for the migration plan.
 
 ---
 
@@ -462,12 +471,16 @@ Supported flags:
 
 | File | Category | Notes |
 |------|----------|-------|
-| `/opt/davit/logs/davit.log` | All (default) | Master log; receives all entries not matched by a specific category |
-| `/opt/davit/logs/davit-audit.log` | AUDIT | Security and compliance events |
-| `/opt/davit/logs/davit-admin.log` | ADMIN | Administrative and daemon events |
-| `/opt/davit/logs/davit-system.log` | SYSTEM | Kernel and OS-level events |
-| `/opt/davit/logs/davit-projects.log` | PROJECT | Central copy of all project-level entries |
+| `${DAVIT_LOGS_DIR}/davit.log` | All (default) | Master log; receives all entries not matched by a specific category |
+| `${DAVIT_LOGS_DIR}/davit-audit.log` | AUDIT | Security and compliance events |
+| `${DAVIT_LOGS_DIR}/davit-admin.log` | ADMIN | Administrative and daemon events |
+| `${DAVIT_LOGS_DIR}/davit-system.log` | SYSTEM | Kernel and OS-level events |
+| `${DAVIT_LOGS_DIR}/davit-projects.log` | PROJECT | Central copy of all project-level entries |
 | `<project>/logs/<project>.log` | PROJECT | Local copy within the calling project |
+
+`${DAVIT_LOGS_DIR}` resolves to `/opt/davit/var/log/` per §12.1/§12.2 — see
+that section for current-vs-target status and rotation/archiving (§12.3,
+§12.4).
 
 ### 11.6 Traceability
 
@@ -486,7 +499,138 @@ Supported flags:
 
 ---
 
-## 12 Package Structure
+## 12 Log File Management
+
+Location, rotation, archiving, query, and configuration ownership for all log
+files produced by davit-logger and consumed across the DAVIT domain. This
+section resolves the drift tracked in
+[2do #2](./ISSUES/2-[NEW]_draft-andes-md-log-file-location-rotation-archiving-query-config-management-procedures.md):
+`davit.conf` already declares a canonical log directory that the Bash adapter
+does not yet honour.
+
+### 12.1 Canonical Location
+
+| Scope | Path | Notes |
+|-------|------|-------|
+| Domain-central logs | `${DAVIT_LOGS_DIR}` → `/opt/davit/var/log/` | Canonical; matches the FHS `var/log` convention and the value already declared in `davit.conf` LAYER 2. Replaces the current de facto `/opt/davit/logs/`. |
+| Project-local copy | `${PROJECT_LOG_DIR}` → `<project>/logs/<project>.log` | Unchanged; per `project-env.template`. Not affected by this decision. |
+
+`/opt/davit/logs/` is retired as a log destination once the migration
+(§12.7) is complete. `/opt/davit/var/log/` already exists on this host but
+currently holds unrelated content (`fritzbox/`, `tubeit/`, `davit_v1.log`);
+davit-logger's files are added alongside it, not replacing it.
+
+### 12.2 Configuration Ownership
+
+davit-logger must not hardcode `/opt/davit` or maintain its own copy of the
+logging switches. `davit.conf` LAYER 2/3 is already the intended source of
+truth:
+
+```
+DAVIT_LOGS_DIR       = ${DAVIT_ROOT}/var/log
+DAVIT_LOG_LEVEL       (deprecated alias: LOG_LEVEL)
+DAVIT_LOG_FORMAT      (deprecated alias: LOG_FORMAT)
+DAVIT_LOG_CONSOLE     (deprecated alias: TERMINAL_OUTPUT)
+DAVIT_LOG_TO_PROJECT  (deprecated alias: LOG_TO_LOCAL)
+DAVIT_LOG_TO_CENTRAL  (no rename needed — already matches)
+```
+
+`davit.conf` already marks `LOG_LEVEL`, `LOG_FORMAT`, `TERMINAL_OUTPUT`, and
+`LOG_TO_LOCAL` as deprecated aliases of the `DAVIT_LOG_*` names — the config
+layer anticipated exactly the names the Bash adapter currently uses
+internally. Closing that loop is the fix:
+
+1. `davit-logger.sh` sources `davit.conf` (when present at
+   `${DAVIT_ROOT}/etc/davit.conf`) before applying its own defaults.
+2. Internal variables are renamed to the `DAVIT_LOG_*` forms; the old names
+   remain accepted as input for one deprecation cycle, per the deprecated-
+   alias convention already used throughout `davit.conf`.
+3. When `davit.conf` is absent (e.g. running outside a DAVIT host), the
+   adapter falls back to its current internal defaults, per FR-010 / NR-005 —
+   preserving "zero hard dependencies" (§7.4).
+4. Project-local `.env` may still override `PROJECT_LOG_DIR` for the local
+   copy only; it must never redefine `DAVIT_LOGS_DIR` (domain-wide, LAYER 2 —
+   "never override in project scripts").
+
+### 12.3 Rotation
+
+davit-logger opens, appends, and closes each destination file on every write
+(`_dl_write()` — no long-lived file descriptor is held open), so standard
+`logrotate` works without `copytruncate` and without signalling the process.
+Rotation is therefore a system-administration concern executed by
+`logrotate`, not by davit-logger code; davit-logger's contract is limited to
+writing to a stable, config-derived path.
+
+Proposed default policy (host-tunable):
+
+| Setting | Value |
+|---------|-------|
+| Frequency | weekly |
+| Keep | 8 rotations (~2 months) |
+| Compression | `compress`, `delaycompress` (skip the most recent rotation) |
+| Ownership/mode | preserve `DAVIT_LOG_MODE` (660) and `davit` group |
+
+Shipped as `config/logrotate/davit-logger.logrotate`, templated against
+`${DAVIT_LOGS_DIR}` (never a literal path), installed by `install.sh`.
+
+### 12.4 Archiving
+
+Archiving is distinct from rotation: rotation manages recent files in place;
+archiving moves aged-out, already-rotated logs to cold storage.
+
+| Scope | Destination | Retention |
+|-------|-------------|-----------|
+| Domain-central | `${DAVIT_LOGS_DIR}/archive/` | Compressed rotations older than the rotation window, until manually pruned or a size cap is hit |
+| Per-project | `<project>/archives/` | Existing convention (see this repo's own `archives/` directory) — project-specific, not prescribed further here |
+
+No automated deletion is proposed at this stage; archiving is a move +
+compress step, not a retention-expiry deletion policy. Automated expiry is
+future work (§15) once volume data justifies one.
+
+### 12.5 Query & Monitoring
+
+`multitail` remains the standard interactive query tool
+(`config/multitail/*.conf`, `config/multitail/bash/aliases.sh`). These
+currently hardcode `/opt/davit/logs/*.log`. Once the canonical location moves
+(§12.1):
+
+- `config/multitail/bash/aliases.sh` (a Bash script) sources `davit.conf` and
+  references `${DAVIT_LOGS_DIR}` directly instead of the literal path.
+- The static `*.conf` scheme files (multitail's own config format) cannot
+  read shell variables at multitail-runtime; `install.sh` templates the
+  resolved `${DAVIT_LOGS_DIR}` into them at install time instead of shipping
+  the literal `/opt/davit/logs/` path.
+
+### 12.6 Permissions & Operational Management
+
+- File mode `660` / writable-dir mode `2770` (setgid, `davit` group) per
+  `davit.conf` LAYER 7 (`DAVIT_LOG_MODE`, `DAVIT_WRITABLE_DIR_MODE`) —
+  already enforced by the `umask 002` guard in `_dl_write()` (see CHANGELOG
+  v1.6.1, "force group-writable umask around log file writes").
+- Disk-usage alerting is out of scope for davit-logger; it is a future
+  DEMP/monitoring concern (§16 DEMP Integration), not this module's
+  responsibility.
+- Multi-host consistency: any host running DAVIT packages is expected to
+  source the same `davit.conf` shape, so `DAVIT_LOGS_DIR` resolves
+  consistently — no per-host hardcoding.
+
+### 12.7 Migration (current → target)
+
+| Step | Action |
+|------|--------|
+| 1 | Ship `davit.conf` sourcing + `DAVIT_LOG_*` rename in `davit-logger.sh` (deprecated aliases still accepted). |
+| 2 | One-time move of existing `/opt/davit/logs/*` content into `/opt/davit/var/log/`, reconciled with the unrelated content already there. |
+| 3 | Update `config/multitail/*` paths (§12.5). |
+| 4 | Install `config/logrotate/davit-logger.logrotate` (§12.3). |
+| 5 | §10 and §11.5 of this document already reflect the target state, ahead of the code — update them again only if the target changes. |
+
+Tracked as
+[2do #2](./ISSUES/2-[NEW]_draft-andes-md-log-file-location-rotation-archiving-query-config-management-procedures.md);
+split into FEATURE/FIX items once this section is approved.
+
+---
+
+## 13 Package Structure
 
 ```
 davit-logger/
@@ -512,11 +656,20 @@ davit-logger/
 ├── charts/
 │   └── MERMAID_DIAGRAMS.md     # Architecture and flow diagrams
 │
-├── scripts/
-│   ├── davit-logger.sh         # Bash adapter — primary implementation
+├── src/                         # Source root (DAVIT src/ standard — see below)
+│   ├── bin/
+│   │   └── davit-logger.sh     # Bash adapter — primary implementation
+│   └── lib/configs/davit-logger/
+│       └── logging-theme.json  # Colour theme
+│
+├── scripts/                     # Build/install/test tooling — NOT application source
 │   ├── install.sh              # Installation script
+│   ├── build.sh                # Build script
 │   ├── test_davit_logger.sh    # Test suite
 │   └── theme_davit.sh          # Theme utility
+│
+├── config/
+│   └── multitail/              # multitail query configs (§12.5)
 │
 ├── tests/
 │   ├── basic_test.sh           # Basic integration tests
@@ -529,13 +682,22 @@ davit-logger/
 └── archives/                   # Historical snapshots and old versions
 ```
 
+> **`src/` vs `scripts/`.** Per the DAVIT platform standard
+> (`davit-os-alpha` ANDES.md §6, Project Structure Standard), `src/` is the
+> only valid location for application source — davit-logger's primary
+> implementation lives at `src/bin/davit-logger.sh` (not `scripts/`, as an
+> earlier revision of this document incorrectly showed). `scripts/` is
+> retained here only for build/install/test tooling, which the platform-wide
+> migration issue (`davit-os-alpha` 2do #10) treats as acceptable — only
+> application source is required to live under `src/`.
+
 ---
 
 # Part III — Implementation Design
 
 ---
 
-## 13 Pseudocode Design
+## 14 Pseudocode Design
 
 Each pseudocode module is maintained under `docs/pseudocode/` (to be created). Current pseudocode is consolidated in [docs/Pseudocode.md](./Pseudocode.md).
 
@@ -566,7 +728,7 @@ FUNCTION log(level, message):
 
 ---
 
-## 14 Future Work
+## 15 Future Work
 
 - **v1.6.0**: Node.js ESM adapter; unified error code system (JSON schema).
 - **v1.7.0**: Python and Go adapters conforming to the same specification.
@@ -577,7 +739,7 @@ FUNCTION log(level, message):
 
 ---
 
-## 15 DEMP Integration
+## 16 DEMP Integration
 
 davit-logger is a primary data source for DEMP (DAVIT Event Management Platform). The integration boundary is:
 
@@ -597,7 +759,7 @@ See [DEMP README](/opt/davit/development/event-management-platform/README.md).
 
 ---
 
-## 16 References
+## 17 References
 
 - [Bash Logging Specification](./logging-specs.md)
 - [Log Format Reference](./log-format.md)
@@ -607,7 +769,7 @@ See [DEMP README](/opt/davit/development/event-management-platform/README.md).
 
 ---
 
-## 17 Glossary
+## 18 Glossary
 
 | Term | Explanation |
 |------|-------------|
@@ -624,11 +786,13 @@ See [DEMP README](/opt/davit/development/event-management-platform/README.md).
 
 ---
 
-## 18 Revision History
+## 19 Revision History
 
 | Version | Date | Author | Description |
 |---------|------|--------|-------------|
 | 0.1.0 | 2026-06-27 | David Mullins | Initial skeleton — SSADM structure, content derived from existing docs and source |
+| 0.2.0 | 2026-07-07 | David Mullins (drafted with Claude) | Added §12 Log File Management (location, config ownership, rotation, archiving, query, permissions, migration plan); updated §4.2, §10, §11.5 to reference it; renumbered §12–§18 → §13–§19 |
+| 0.2.1 | 2026-07-07 | David Mullins (drafted with Claude) | Corrected §13 Package Structure — primary implementation is `src/bin/davit-logger.sh`, not `scripts/davit-logger.sh`; clarified `src/` vs `scripts/` per `davit-os-alpha` platform standard |
 
 ---
 
