@@ -5,6 +5,39 @@ All notable changes to the ["/DavitTec/davit-logger"](/DavitTec/davit-logger) pr
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)/(_Davit Scheme v0.1.2_)
 
+## [Unreleased]
+
+### 🐛 Bug Fixes
+
+Remove `readonly` from `_D_LOGGER_LOADED`, `user`, `_D_ROOT`, `_D_BIN`,
+`_D_LOGS`, `_D_LIB` in `davit-logger.sh` (v1.4.4 → v1.4.5).
+
+Per the bash manual, assigning to a `readonly` variable "fails and the shell
+exits" in a non-interactive shell — unconditionally, regardless of `set -e`.
+Any re-source of `davit-logger.sh` in the same shell process (a developer
+re-sourcing after an edit, a long-lived daemon, a wrapper script sourcing
+several sub-scripts) that reached past the `_D_LOGGER_LOADED` guard would
+crash the entire calling process the instant the `readonly` lines executed
+a second time. The guard exists precisely to make re-sourcing a safe no-op;
+that only holds if nothing it protects is `readonly`. Confirmed fixed: a
+forced re-source (bypassing the guard) now completes without error where it
+previously terminated the shell.
+
+Source `davit.conf` for `DAVIT_LOGS_DIR` instead of hardcoding
+`/opt/davit/logs` (v1.4.5 → v1.4.6).
+
+`davit-logger.sh` now sources `${DAVIT_ROOT:-/opt/davit}/etc/davit.conf`
+(when not already sourced by the caller) and derives `_D_ROOT`/`_D_LOGS`
+from `DAVIT_ROOT`/`DAVIT_LOGS_DIR`, falling back to the old hardcoded
+defaults only when `davit.conf` isn't present at all (FR-010/NR-005 — zero
+hard dependencies preserved). Logs now land in `/opt/davit/var/log/` (the
+canonical location per ANDES.md §12), not the retired `/opt/davit/logs/`.
+Surfaced by David deliberately deleting `/opt/davit/logs/` as a dependency
+smoke test — every write failed with "No such file or directory" because
+`david` (non-owner) can't `mkdir` directly under `/opt/davit/` root (2750)
+to recreate it, and the script had no config-driven fallback location to
+try instead.
+
 ## [1.6.1] - 2026-07-06 ([v1.6.1](/DavitTec/davit-logger/releases/tag/v1.6.1))
 
 ### 🐛 Bug Fixes

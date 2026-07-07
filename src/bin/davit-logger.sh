@@ -6,7 +6,7 @@
 #               JSON + Text output, robust project detection, console control
 # Author      : David Mullins
 # Created     : 2025-11-02
-# Version     : 1.4.4
+# Version     : 1.4.6
 # Project     : davit-logger
 # Alias       : logger
 # Bin-Name    : davit-logger.sh
@@ -21,18 +21,39 @@ set -Eeo pipefail
 shopt -s extglob nullglob
 
 # Guard
+# NOTE: deliberately NOT `readonly` below. A readonly reassignment is a hard
+# error in bash — and per the bash manual, assigning to a readonly variable
+# "fails and the shell exits" in a non-interactive shell, unconditionally,
+# regardless of `set -e`. Any re-source of this file in the same shell (a
+# dev re-sourcing after an edit, a long-lived daemon, a wrapper sourcing
+# several sub-scripts) would otherwise crash the entire calling process the
+# instant this file is loaded a second time — the guard below exists
+# precisely to make re-sourcing a safe no-op, which only works if nothing
+# it protects is `readonly`.
 [[ -n "${_D_LOGGER_LOADED:-}" ]] && return 0
-readonly _D_LOGGER_LOADED=1
+_D_LOGGER_LOADED=1
 
-readonly user=${SUDO_USER:-$USER}
+user=${SUDO_USER:-$USER}
 
 # ------------------------------------------------------------------
 # Core Paths
 # ------------------------------------------------------------------
-readonly _D_ROOT="/opt/davit"
-readonly _D_BIN="${_D_ROOT}/bin"
-readonly _D_LOGS="${_D_ROOT}/logs"
-readonly _D_LIB="${_D_ROOT}/lib"
+# davit.conf is the authoritative source for DAVIT_ROOT / DAVIT_LOGS_DIR
+# (davit-os-alpha ANDES.md §12 / §6 LAYER 2) — source it if the caller
+# hasn't already, so the log directory is config-driven rather than
+# hardcoded. Degrade to the historical defaults if davit.conf isn't present
+# at all (FR-010 / NR-005 — zero hard dependencies).
+if [[ -z "${DAVIT_ROOT:-}" ]]; then
+	_dl_conf="${DAVIT_ROOT:-/opt/davit}/etc/davit.conf"
+	# shellcheck source=/dev/null
+	[[ -r "${_dl_conf}" ]] && source "${_dl_conf}" 2>/dev/null
+	unset _dl_conf
+fi
+
+_D_ROOT="${DAVIT_ROOT:-/opt/davit}"
+_D_BIN="${DAVIT_BIN:-${_D_ROOT}/bin}"
+_D_LOGS="${DAVIT_LOGS_DIR:-${_D_ROOT}/logs}"
+_D_LIB="${DAVIT_LIB:-${_D_ROOT}/lib}"
 
 mkdir -p "${_D_LOGS}" 2>/dev/null || true
 

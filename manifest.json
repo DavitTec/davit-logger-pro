@@ -28,7 +28,7 @@
       "type": "bash",
       "id_type": "script-id",
       "script_id": "8796413b-0a78-4b78-9d93-7efd11b1db7c",
-      "version": "1.4.3",
+      "version": "1.4.6",
       "alias": "logger",
       "desc_short": "Davit Logger - STABLE POSTMASTER – Authoritative Davit Logger",
       "last_updated": "2026-07-06T22:43:42Z",

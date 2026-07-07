@@ -8,6 +8,7 @@
 | ID    | Type    | Status | Title                  | Created    | Link |
 |-------|---------|--------|------------------------|------------|------|
 | 00002 | TODO | 📌 NEW | Draft ANDES.md: log file location, rotation, archiving, query & config management procedures | 2026-07-07 | [details](./ISSUES/2-[NEW]_draft-andes-md-log-file-location-rotation-archiving-query-config-management-procedures.md) |
+| 00003 | FIX | 📌 NEW | Fix readonly re-source crash bug in davit-logger.sh (v1.4.4 -> v1.4.5) | 2026-07-07 | [details](./ISSUES/3-[NEW]_fix-readonly-re-source-crash-bug-in-davit-logger-sh-v1-4-4-v1-4-5.md) |
 
 ## ✅ Resolved / Closed Issues
 

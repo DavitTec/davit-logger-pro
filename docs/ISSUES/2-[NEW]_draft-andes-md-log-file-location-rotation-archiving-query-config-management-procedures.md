@@ -90,10 +90,20 @@ finalised, split the actual work into FEATURE/FIX `2do` items.
       implementation.
 - [ ] Review draft with David; finalise ANDES.md (still `status: draft`,
       v0.2.0).
-- [ ] Once finalised, file FEATURE/FIX `2do` items for the actual
-      implementation (e.g. source davit.conf in davit-logger.sh, rename vars,
-      migrate `/opt/davit/logs/*` data, update multitail configs, add
-      `config/logrotate/davit-logger.logrotate`).
+- [x] Source `davit.conf` in `davit-logger.sh` and derive `_D_LOGS` from
+      `DAVIT_LOGS_DIR` (v1.4.6) — done ahead of full ANDES sign-off, forced
+      by a live outage (see Notes below). Graceful fallback to the old
+      default preserved when `davit.conf` is absent.
+- [ ] Migrate `/opt/davit/logs/*` historical data into `/opt/davit/var/log/`
+      (David already backed the directory up to
+      `/opt/davit/var/backups/logs/` — the live directory itself is gone,
+      not just its content).
+- [ ] Update `config/multitail/*` configs to derive from `DAVIT_LOGS_DIR`
+      instead of the literal `/opt/davit/logs/` path.
+- [ ] Add `config/logrotate/davit-logger.logrotate`.
+- [ ] Full `DAVIT_LOG_*` variable rename (`LOG_LEVEL`→`DAVIT_LOG_LEVEL` etc.)
+      — deferred; only the log *directory* was fixed so far, not the other
+      LAYER 3 switches. Separate pass.
 
 ## Notes / History
 
@@ -106,3 +116,22 @@ finalised, split the actual work into FEATURE/FIX `2do` items.
   Migration). Renumbered §12–§18 → §13–§19, fixed the one internal
   cross-reference, updated §4.2/§10/§11.5, bumped ANDES to v0.2.0. Awaiting
   David's review before finalising and cutting FEATURE/FIX items.
+* 2026-07-07: David deliberately deleted `/opt/davit/logs/` (backed up to
+  `/opt/davit/var/backups/logs/`) as a dependency smoke test. Confirmed the
+  worst case: every write in the deployed `davit-logger.sh` (v1.4.5, readonly
+  fix only) failed with "No such file or directory", because it still
+  hardcoded `/opt/davit/logs` and `david` can't `mkdir` directly under
+  `/opt/davit/` (2750) to recreate it. Fixed in v1.4.6: sources `davit.conf`
+  and uses `DAVIT_LOGS_DIR` (→ `/opt/davit/var/log/`, which already exists).
+  Verified locally: writes succeed, no error. Not yet deployed to
+  `/opt/davit/bin/` — needs `sudo -u davit cp src/bin/davit-logger.sh
+  /opt/davit/bin/`.
+* 2026-07-07: `davit-os-alpha` ANDES.md §6 permissions table updated to
+  formally retire `/opt/davit/logs/` (cross-project follow-up filed as
+  `davit-os-alpha` 2do #20). Broader grep also found two davit-logger-scoped
+  stragglers to fold into this migration (§12.7), not #20: (1)
+  `davit-log-harness/docs/ANDES.md` (lines 67, 324) — sibling test-harness
+  project, same stale `/opt/davit/logs/` convention text, scaffolded from the
+  same template as this document originally was; (2)
+  `davit-logger-test/scripts/test-04-log.sh` — `log_info` help-text strings
+  naming the old paths, not an actual write path.
